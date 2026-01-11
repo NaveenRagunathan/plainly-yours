@@ -1,0 +1,13 @@
+VITE_SUPABASE_PROJECT_ID="aaa"
+VITE_SUPABASE_PUBLISHABLE_KEY="your-key"
+VITE_SUPABASE_URL="your url"
+SUPABASE_SERVICE_ROLE_KEY="your-key"
+# Email Provider (Resend)
+RESEND_API_KEY="your-key"
+FROM_EMAIL="your-key"
+FROM_NAME="your-key"
+
+# Stripe
+STRIPE_RESTRICTED_KEY="your-key"
+STRIPE_SECRET_KEY="your-key"
+STRIPE_WEBHOOK_SECRET="your-key"

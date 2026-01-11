@@ -6,49 +6,49 @@ import type { PricingTier } from "@/types";
 
 const pricingTiers: PricingTier[] = [
   {
+    id: 'free',
+    name: 'Free',
+    price: 0,
+    billing: 'monthly',
+    subscriberLimit: 100,
+    features: [
+      'Up to 100 subscribers',
+      '100/day broadcasts',
+      '1 sequence',
+      'Landing pages',
+      'Basic analytics',
+      'Community support',
+    ],
+  },
+  {
     id: 'starter',
     name: 'Starter',
     price: 19,
     billing: 'monthly',
-    subscriberLimit: 5000,
-    features: [
-      'Up to 5,000 subscribers',
-      'Unlimited broadcasts',
-      'Unlimited sequences',
-      'Landing pages',
-      'Basic analytics',
-      'Email support',
-    ],
-  },
-  {
-    id: 'growth',
-    name: 'Growth',
-    price: 39,
-    billing: 'monthly',
     subscriberLimit: 25000,
     features: [
       'Up to 25,000 subscribers',
-      'Everything in Starter',
+      'Everything in Free',
       'Priority email support',
-      'A/B testing (subject lines)',
+      'A/B testing',
       'Advanced analytics',
-      'Stripe integration',
+      'Unlimited automation',
     ],
     popular: true,
   },
   {
-    id: 'lifetime',
-    name: 'Lifetime',
+    id: 'pro',
+    name: 'Pro',
     price: 49,
-    billing: 'one-time',
-    subscriberLimit: 2000,
+    billing: 'monthly',
+    subscriberLimit: 100000,
     features: [
-      'Up to 2,000 subscribers',
-      'All features included',
-      'Lifetime access',
-      'Lifetime support',
-      'No monthly fees ever',
-      'Perfect for getting started',
+      'Up to 100,000 subscribers',
+      'Everything in Starter',
+      'Dedicated support',
+      'Custom integrations',
+      'White-label options',
+      'SLA guarantee',
     ],
   },
 ];
@@ -78,11 +78,10 @@ export function PricingSection() {
           {pricingTiers.map((tier, index) => (
             <div
               key={tier.id}
-              className={`relative rounded-2xl p-8 transition-all duration-300 animate-fade-in-up ${
-                tier.popular
+              className={`relative rounded-2xl p-8 transition-all duration-300 animate-fade-in-up ${tier.popular
                   ? 'bg-foreground text-background shadow-2xl scale-105 z-10'
                   : 'bg-card border border-border shadow-lg hover:shadow-xl hover:-translate-y-1'
-              }`}
+                }`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {tier.popular && (
@@ -123,11 +122,10 @@ export function PricingSection() {
                 onClick={() => handleSelectPlan(tier.id)}
                 variant={tier.popular ? 'hero' : 'outline'}
                 size="lg"
-                className={`w-full group ${
-                  tier.popular
+                className={`w-full group ${tier.popular
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : ''
-                }`}
+                  }`}
               >
                 Get Started
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

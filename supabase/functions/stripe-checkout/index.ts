@@ -20,20 +20,29 @@ serve(async (req) => {
             apiVersion: '2023-10-16',
         })
 
-        // Define pricing plans
+        // Define pricing plans with new structure
+        // NOTE: Replace these Price IDs with actual ones from your Stripe Dashboard
         const plans = {
+            'free': null, // Free tier - no checkout needed
             'starter': {
-                price: 'price_starter', // Replace with your actual Stripe Price ID
+                price: 'price_1XX_REPLACE_WITH_REAL_STARTER_PRICE_ID', // $19/month
                 name: 'Starter Plan',
             },
             'pro': {
-                price: 'price_pro', // Replace with your actual Stripe Price ID
+                price: 'price_1YY_REPLACE_WITH_REAL_PRO_PRICE_ID', // $49/month
                 name: 'Pro Plan',
             },
-            'enterprise': {
-                price: 'price_enterprise', // Replace with your actual Stripe Price ID
-                name: 'Enterprise Plan',
-            },
+        }
+
+        // Check if plan exists and is not free
+        if (planId === 'free') {
+            return new Response(
+                JSON.stringify({ error: 'Free plan does not require checkout' }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 400,
+                },
+            )
         }
 
         const selectedPlan = plans[planId as keyof typeof plans]

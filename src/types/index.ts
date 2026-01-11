@@ -3,7 +3,7 @@ export interface User {
   id: string; // UUID
   email: string;
   name: string;
-  plan: 'starter' | 'growth' | 'lifetime';
+  plan: 'free' | 'starter' | 'pro';
   subscriberLimit: number;
   createdAt: string; // ISO Date
   updatedAt: string; // ISO Date
@@ -118,7 +118,7 @@ export interface SubscriberGrowthPoint {
 
 // Pricing Types
 export interface PricingTier {
-  id: 'starter' | 'growth' | 'lifetime';
+  id: 'free' | 'starter' | 'pro' | 'lifetime';
   name: string;
   price: number;
   billing: 'monthly' | 'one-time';
