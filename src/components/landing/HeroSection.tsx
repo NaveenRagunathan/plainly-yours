@@ -53,23 +53,6 @@ export function HeroSection() {
           </Button>
         </div>
 
-        {/* Social proof */}
-        <div className="flex flex-col items-center gap-4 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          <div className="flex -space-x-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 border-2 border-background flex items-center justify-center text-xs font-medium text-primary"
-              >
-                {String.fromCharCode(64 + i)}
-              </div>
-            ))}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Join <span className="font-semibold text-foreground">1,200+</span> creators already using Plainly
-          </p>
-        </div>
-
         {/* Feature highlights */}
         <div className="grid sm:grid-cols-3 gap-8 mt-20 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
           <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-card border border-border/50 shadow-sm hover:shadow-md transition-shadow">

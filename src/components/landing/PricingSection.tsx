@@ -37,10 +37,10 @@ const pricingTiers: PricingTier[] = [
     popular: true,
   },
   {
-    id: 'pro',
-    name: 'Pro',
+    id: 'lifetime',
+    name: 'Lifetime',
     price: 49,
-    billing: 'monthly',
+    billing: 'one-time',
     subscriberLimit: 100000,
     features: [
       'Up to 100,000 subscribers',
@@ -48,7 +48,7 @@ const pricingTiers: PricingTier[] = [
       'Dedicated support',
       'Custom integrations',
       'White-label options',
-      'SLA guarantee',
+      'Pay once, use forever',
     ],
   },
 ];
@@ -79,8 +79,8 @@ export function PricingSection() {
             <div
               key={tier.id}
               className={`relative rounded-2xl p-8 transition-all duration-300 animate-fade-in-up ${tier.popular
-                  ? 'bg-foreground text-background shadow-2xl scale-105 z-10'
-                  : 'bg-card border border-border shadow-lg hover:shadow-xl hover:-translate-y-1'
+                ? 'bg-foreground text-background shadow-2xl scale-105 z-10'
+                : 'bg-card border border-border shadow-lg hover:shadow-xl hover:-translate-y-1'
                 }`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
@@ -123,8 +123,8 @@ export function PricingSection() {
                 variant={tier.popular ? 'hero' : 'outline'}
                 size="lg"
                 className={`w-full group ${tier.popular
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : ''
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : ''
                   }`}
               >
                 Get Started

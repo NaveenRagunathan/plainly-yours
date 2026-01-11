@@ -1,1 +1,10 @@
-project_id = "mzidkfejfyheucuroule"
+project_id = "ymsrqlegowdqxlshxfku"
+
+[functions.stripe-checkout]
+verify_jwt = false  # Handles user authentication internally
+
+[functions.stripe-webhook]
+verify_jwt = false  # Webhook called by Stripe, not authenticated users
+
+[functions.process-email-queue]
+verify_jwt = false  # Called by cron or manually, uses service role key

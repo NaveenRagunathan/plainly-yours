@@ -1,13 +1,15 @@
-VITE_SUPABASE_PROJECT_ID="aaa"
-VITE_SUPABASE_PUBLISHABLE_KEY="your-key"
-VITE_SUPABASE_URL="your url"
-SUPABASE_SERVICE_ROLE_KEY="your-key"
-# Email Provider (Resend)
-RESEND_API_KEY="your-key"
-FROM_EMAIL="your-key"
-FROM_NAME="your-key"
+# Supabase Configuration
+VITE_SUPABASE_URL="https://your-project-ref.supabase.co"
+VITE_SUPABASE_ANON_KEY="your-anon-key-here"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
 
-# Stripe
-STRIPE_RESTRICTED_KEY="your-key"
-STRIPE_SECRET_KEY="your-key"
-STRIPE_WEBHOOK_SECRET="your-key"
+# Email Provider (Resend)
+# Get your API key from https://resend.com/api-keys
+RESEND_API_KEY="re_xxxxxxxxxxxx"
+FROM_EMAIL="hello@yourdomain.com"  # Must be verified in Resend
+FROM_NAME="Plainly"
+
+# Stripe Payment Integration
+# Create products at https://dashboard.stripe.com/products
+STRIPE_SECRET_KEY="sk_test_xxxxxxxxxxxxx"  # Use sk_live_ for production
+STRIPE_WEBHOOK_SECRET="whsec_xxxxxxxxxxxxx"  # From Stripe webhook settings

@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -20,85 +19,73 @@ serve(async (req) => {
             apiVersion: '2023-10-16',
         })
 
-        // Define pricing plans with new structure
-        // NOTE: Replace these Price IDs with actual ones from your Stripe Dashboard
-        const plans = {
-            'free': null, // Free tier - no checkout needed
-            'starter': {
-                price: 'price_1XX_REPLACE_WITH_REAL_STARTER_PRICE_ID', // $19/month
-                name: 'Starter Plan',
-            },
-            'pro': {
-                price: 'price_1YY_REPLACE_WITH_REAL_PRO_PRICE_ID', // $49/month
-                name: 'Pro Plan',
-            },
-        }
-
-        // Check if plan exists and is not free
-        if (planId === 'free') {
+        // Validate plan ID
+        if (!planId || planId === 'free') {
             return new Response(
-                JSON.stringify({ error: 'Free plan does not require checkout' }),
-                {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 400,
-                },
+                JSON.stringify({ error: 'Invalid plan - free tier does not require checkout' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
             )
         }
 
-        const selectedPlan = plans[planId as keyof typeof plans]
-        if (!selectedPlan) {
-            throw new Error('Invalid plan ID')
+        // Get Stripe Price ID based on plan
+        let priceId: string
+        let mode: 'subscription' | 'payment' = 'subscription'
+
+        if (planId === 'starter') {
+            priceId = 'price_1SoKCGCNhEYzrUbp0bfc6taR'
+            mode = 'subscription'
+        } else if (planId === 'lifetime') {
+            priceId = 'price_1SoLGKCNhEYzrUbp4N2HPM3x' // Lifetime one-time payment
+            mode = 'payment' // One-time payment for lifetime
+        } else {
+            return new Response(
+                JSON.stringify({ error: `Unknown plan: ${planId}` }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            )
         }
 
-        // Get user from auth header
-        const authHeader = req.headers.get('Authorization')!
-        const token = authHeader.replace('Bearer ', '')
-        const { data: { user }, error: userError } = await fetch(
-            `${Deno.env.get('SUPABASE_URL')}/auth/v1/user`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
-                },
-            }
-        ).then(res => res.json())
+        // Get authenticated user from JWT
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: 'Not authenticated' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+            )
+        }
 
-        if (userError || !user) {
-            throw new Error('Authentication required')
+        // Extract JWT payload (Supabase already validated it)
+        const token = authHeader.replace('Bearer ', '')
+        const payload = JSON.parse(atob(token.split('.')[1]))
+
+        if (!payload.sub || !payload.email) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid token' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+            )
         }
 
         // Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
-            customer_email: user.email,
-            line_items: [
-                {
-                    price: selectedPlan.price,
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',
+            customer_email: payload.email,
+            line_items: [{ price: priceId, quantity: 1 }],
+            mode: mode,
             success_url: `${origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/auth`,
+            cancel_url: `${origin}/dashboard/settings`,
             metadata: {
-                user_id: user.id,
+                user_id: payload.sub,
                 plan_id: planId,
             },
         })
 
         return new Response(
             JSON.stringify({ url: session.url }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-            },
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
     } catch (error) {
+        console.error('Stripe checkout error:', error)
         return new Response(
-            JSON.stringify({ error: error.message }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400,
-            },
+            JSON.stringify({ error: (error as Error).message }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         )
     }
 })

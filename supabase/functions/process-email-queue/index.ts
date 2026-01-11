@@ -3,8 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
 // Resend API client (lightweight, no SDK needed for simple sending)
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
-const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev'
-const FROM_NAME = Deno.env.get('FROM_NAME') || 'Plainly'
+const VERIFIED_DOMAIN = Deno.env.get('VERIFIED_DOMAIN') || 'resend.dev'
 
 const supabase = createClient(
     Deno.env.get('SUPABASE_URL') || '',
@@ -17,7 +16,9 @@ const DELAY_BETWEEN_EMAILS_MS = 100
 /**
  * Send email via Resend API
  */
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(to: string, subject: string, html: string, fromName: string, replyTo: string) {
+    const fromAddress = `notifications@${VERIFIED_DOMAIN}`
+
     const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -25,8 +26,9 @@ async function sendEmail(to: string, subject: string, html: string) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            from: `${FROM_NAME} <${FROM_EMAIL}>`,
+            from: `${fromName} <${fromAddress}>`,
             to: [to],
+            reply_to: replyTo,
             subject,
             html,
         }),
@@ -53,7 +55,7 @@ async function processQueue() {
             console.error('Error queueing broadcasts:', queueError)
         }
 
-        // 2. Fetch pending jobs
+        // 2. Fetch pending jobs with Sender Profile info
         const { data: jobs, error: jobsError } = await supabase
             .from('email_jobs')
             .select(`
@@ -64,6 +66,7 @@ async function processQueue() {
                 step_id,
                 subscriber_id,
                 attempts,
+                profiles:user_id (name, email),
                 subscribers (email, first_name, status),
                 broadcasts (subject, body),
                 sequence_steps (subject, body)
@@ -95,9 +98,24 @@ async function processQueue() {
                 .update({ status: 'processing', attempts: job.attempts + 1 })
                 .eq('id', job.id)
 
+            const sender = job.profiles as any
             const subscriber = job.subscribers as any
             const broadcast = job.broadcasts as any
             const sequenceStep = job.sequence_steps as any
+
+            if (!sender) {
+                console.error(`Job ${job.id}: Sender profile missing`)
+                await supabase
+                    .from('email_jobs')
+                    .update({
+                        status: 'failed',
+                        error_message: 'Sender profile missing',
+                        processed_at: new Date().toISOString()
+                    })
+                    .eq('id', job.id)
+                failedCount++
+                continue
+            }
 
             if (!subscriber || subscriber.status !== 'active') {
                 console.log(`Skipping job ${job.id}: Subscriber not active`)
@@ -136,7 +154,9 @@ async function processQueue() {
                 await sendEmail(
                     subscriber.email,
                     subject,
-                    personalizedBody.replace(/\n/g, '<br>')
+                    personalizedBody.replace(/\n/g, '<br>'),
+                    sender.name || 'Plainly Team',
+                    sender.email
                 )
 
                 await supabase
@@ -192,9 +212,9 @@ async function processQueue() {
             if (!jobStats) continue
 
             const total = jobStats.length
-            const sent = jobStats.filter(j => j.status === 'sent').length
-            const failed = jobStats.filter(j => j.status === 'failed').length
-            const pending = jobStats.filter(j => j.status === 'pending' || j.status === 'processing').length
+            const sent = jobStats.filter((j: any) => j.status === 'sent').length
+            const failed = jobStats.filter((j: any) => j.status === 'failed').length
+            const pending = jobStats.filter((j: any) => j.status === 'pending' || j.status === 'processing').length
 
             const { data: broadcastData } = await supabase
                 .from('broadcasts')
@@ -230,7 +250,7 @@ async function processQueue() {
     }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
     // This edge function can be called via cron or manually
     try {
         const result = await processQueue()

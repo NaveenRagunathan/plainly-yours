@@ -3,7 +3,7 @@
 export interface Profile {
     id: string;
     email: string;
-    plan: 'free' | 'starter' | 'pro';
+    plan: 'free' | 'starter' | 'lifetime';
     subscription_status?: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
     subscriber_limit: number;
     is_lifetime?: boolean;
@@ -43,7 +43,7 @@ export function isWithinSubscriberLimit(profile: Profile, currentCount: number):
     const limits: Record<string, number> = {
         free: 100,
         starter: 25000,
-        pro: 100000,
+        lifetime: 100000,
     };
 
     const limit = limits[profile.plan] || 0;
@@ -60,7 +60,7 @@ export function getRemainingSubscribers(profile: Profile, currentCount: number):
     const limits: Record<string, number> = {
         free: 100,
         starter: 25000,
-        pro: 100000,
+        lifetime: 100000,
     };
 
     const limit = limits[profile.plan] || 0;

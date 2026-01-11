@@ -10,9 +10,9 @@ import type { PricingTier } from "@/types";
 import { authService } from "@/services/auth";
 
 const planDetails: Record<PricingTier['id'], { name: string; price: number; billing: string }> = {
+  free: { name: 'Free', price: 0, billing: '' },
   starter: { name: 'Starter', price: 19, billing: '/month' },
-  growth: { name: 'Growth', price: 39, billing: '/month' },
-  lifetime: { name: 'Lifetime', price: 49, billing: ' one-time' },
+  lifetime: { name: 'Lifetime', price: 49, billing: '' },
 };
 
 export default function Auth() {
@@ -36,24 +36,59 @@ export default function Auth() {
     try {
       if (isLogin) {
         await authService.signIn(formData.email, formData.password);
+        const user = await authService.getCurrentUser();
+        setUser(user);
+        toast({
+          title: "Welcome back!",
+          description: "You've been logged in successfully.",
+        });
+        navigate('/dashboard');
       } else {
+        const planId = selectedPlan || 'free';
+
+        // For paid plans: create account first, then redirect to checkout
+        if (planId !== 'free') {
+          // Create account with 'free' plan initially
+          await authService.signUp(
+            formData.email,
+            formData.password,
+            formData.name,
+            'free'  // Start as free, webhook will upgrade after payment
+          );
+
+          // Get the newly created user
+          const user = await authService.getCurrentUser();
+          setUser(user);
+
+          toast({
+            title: "Redirecting to payment...",
+            description: `Complete your ${planDetails[planId].name} plan payment.`,
+          });
+
+          // Now that user is logged in, redirect to checkout
+          const { url } = await authService.createCheckoutSession(planId);
+          window.location.href = url;
+          return;
+        }
+
+        // For free plan, create account and go to dashboard
         await authService.signUp(
           formData.email,
           formData.password,
           formData.name,
-          selectedPlan || 'starter'
+          'free'
         );
+
+        const user = await authService.getCurrentUser();
+        setUser(user);
+
+        toast({
+          title: "Account created!",
+          description: "Your account is ready. Let's get started!",
+        });
+
+        navigate('/dashboard');
       }
-
-      const user = await authService.getCurrentUser();
-      setUser(user);
-
-      toast({
-        title: isLogin ? "Welcome back!" : "Account created!",
-        description: isLogin ? "You've been logged in successfully." : "Your account is ready. Let's get started!",
-      });
-
-      navigate('/dashboard');
     } catch (error: any) {
       toast({
         title: "Authentication failed",

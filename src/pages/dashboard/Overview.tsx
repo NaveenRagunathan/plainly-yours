@@ -1,14 +1,33 @@
+import { useEffect } from "react";
 import { useAnalyticsOverview, useSubscriberGrowth } from "@/hooks/useAnalytics";
 import { useSequences } from "@/hooks/useSequences";
 import { useBroadcasts } from "@/hooks/useBroadcasts";
 import { Users, Send, Mail, TrendingUp, ArrowUp, ArrowDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardOverview() {
+  const { toast } = useToast();
   const { data: analytics, isLoading: isAnalyticsLoading } = useAnalyticsOverview();
   const { data: growthData = [] } = useSubscriberGrowth();
   const { data: sequences = [] } = useSequences();
   const { data: broadcasts = [] } = useBroadcasts();
+
+  // Show welcome message for users returning from successful payment
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+
+    if (sessionId) {
+      toast({
+        title: "Payment successful!",
+        description: "Your subscription will be activated shortly.",
+      });
+
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   if (isAnalyticsLoading || !analytics) {
     return (

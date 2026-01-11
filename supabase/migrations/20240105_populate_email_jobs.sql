@@ -5,12 +5,13 @@ DECLARE
     broadcast_record RECORD;
 BEGIN
     -- Loop through all scheduled broadcasts that are due
+    -- Also include 'sending' broadcasts that have NO jobs (stuck in transition)
     FOR broadcast_record IN 
-        SELECT * 
-        FROM public.broadcasts 
-        WHERE status = 'scheduled' 
-        AND scheduled_for <= now()
-        FOR UPDATE SKIP LOCKED -- Prevent race conditions if multiple workers run
+        SELECT b.* 
+        FROM public.broadcasts b
+        WHERE (b.status = 'scheduled' AND b.scheduled_for <= now())
+        OR (b.status = 'sending' AND NOT EXISTS (SELECT 1 FROM email_jobs WHERE broadcast_id = b.id))
+        FOR UPDATE SKIP LOCKED
     LOOP
         -- 1. Insert jobs for all active subscribers of this user
         -- Note: Handling simple tag filtering if present

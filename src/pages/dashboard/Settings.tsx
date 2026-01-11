@@ -26,12 +26,12 @@ export default function SettingsPage() {
   };
 
   const planInfo = {
-    starter: { name: "Starter", price: "$19/month", limit: "5,000 subscribers" },
-    growth: { name: "Growth", price: "$39/month", limit: "25,000 subscribers" },
-    lifetime: { name: "Lifetime", price: "$49 one-time", limit: "2,000 subscribers" },
+    free: { name: "Free", price: "$0/month", limit: "100 subscribers" },
+    starter: { name: "Starter", price: "$19/month", limit: "25,000 subscribers" },
+    lifetime: { name: "Lifetime", price: "$49 one-time", limit: "100,000 subscribers" },
   };
 
-  const currentPlan = user ? planInfo[user.plan] : null;
+  const currentPlan = user ? planInfo[user.plan as keyof typeof planInfo] : null;
 
   return (
     <div className="space-y-8 max-w-2xl">
@@ -75,7 +75,16 @@ export default function SettingsPage() {
                 <Badge className="bg-primary text-primary-foreground">{currentPlan.name}</Badge>
                 <span className="text-foreground font-medium">{currentPlan.price}</span>
               </div>
-              {user?.plan !== 'lifetime' && (
+              {user?.plan === 'free' && (
+                <Button
+                  onClick={() => handleUpgrade('starter')}
+                  disabled={isCheckingOut}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isCheckingOut ? "Preparing Checkout..." : "Upgrade to Starter"}
+                </Button>
+              )}
+              {user?.plan === 'starter' && (
                 <Button
                   onClick={() => handleUpgrade('lifetime')}
                   disabled={isCheckingOut}
@@ -107,9 +116,14 @@ export default function SettingsPage() {
                 Using 5 of {user?.subscriberLimit?.toLocaleString()} subscribers
               </p>
             </div>
+            {user?.plan === 'free' && (
+              <p className="text-sm text-muted-foreground">
+                Need more subscribers? Upgrade to Starter for 25,000 subscriber limit.
+              </p>
+            )}
             {user?.plan === 'starter' && (
               <p className="text-sm text-muted-foreground">
-                Want to remove monthly limits? Upgrade to Lifetime for a one-time fee.
+                Want lifetime access? Upgrade to Lifetime for 100,000 subscriber limit.
               </p>
             )}
           </div>

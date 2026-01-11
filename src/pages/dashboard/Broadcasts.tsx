@@ -51,8 +51,12 @@ export default function BroadcastsPage() {
     createBroadcast.mutate({
       subject: newBroadcast.subject,
       body: newBroadcast.body,
-      status: sendNow ? "sending" : newBroadcast.scheduledFor ? "scheduled" : "draft",
-      scheduledFor: newBroadcast.scheduledFor ? new Date(newBroadcast.scheduledFor).toISOString() : undefined,
+      status: sendNow ? "scheduled" : newBroadcast.scheduledFor ? "scheduled" : "draft",
+      scheduledFor: sendNow
+        ? new Date().toISOString()
+        : newBroadcast.scheduledFor
+          ? new Date(newBroadcast.scheduledFor).toISOString()
+          : undefined,
       recipientFilter: {},
       isABTest: newBroadcast.isABTest,
       subjectB: newBroadcast.subjectB || undefined,

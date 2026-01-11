@@ -11,8 +11,8 @@ dotenv.config();
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-const FROM_NAME = process.env.FROM_NAME || 'Plainly';
+const VERIFIED_DOMAIN = process.env.VERIFIED_DOMAIN || 'resend.dev';
+const FROM_NAME_DEFAULT = process.env.FROM_NAME || 'Plainly';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {
     console.error('Missing required environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY');
@@ -41,7 +41,7 @@ async function processQueue() {
             console.error('Error queueing broadcasts:', queueError);
         }
 
-        // 2. Fetch pending jobs
+        // 2. Fetch pending jobs with Sender Profile info
         const { data: jobs, error: jobsError } = await supabase
             .from('email_jobs')
             .select(`
@@ -52,6 +52,7 @@ async function processQueue() {
                 step_id,
                 subscriber_id,
                 attempts,
+                profiles (name, email),
                 subscribers (email, first_name, status),
                 broadcasts (subject, body),
                 sequence_steps (subject, body)
@@ -83,9 +84,20 @@ async function processQueue() {
                 .update({ status: 'processing', attempts: job.attempts + 1 })
                 .eq('id', job.id);
 
+            const sender = job.profiles;
             const subscriber = job.subscribers;
             const broadcast = job.broadcasts;
             const sequenceStep = job.sequence_steps;
+
+            if (!sender) {
+                console.error(`Job ${job.id}: Sender profile missing`);
+                await supabase
+                    .from('email_jobs')
+                    .update({ status: 'failed', error_message: 'Sender profile missing', processed_at: new Date().toISOString() })
+                    .eq('id', job.id);
+                failedCount++;
+                continue;
+            }
 
             if (!subscriber || subscriber.status !== 'active') {
                 console.log(`Skipping job ${job.id}: Subscriber not active`);
@@ -111,11 +123,14 @@ async function processQueue() {
             }
 
             const personalizedBody = body.replace(/\{\{first_name\}\}/g, subscriber.first_name || 'there');
+            const fromName = sender.name || FROM_NAME_DEFAULT;
+            const fromAddress = `notifications@${VERIFIED_DOMAIN}`;
 
             try {
                 const { data, error } = await resend.emails.send({
-                    from: `${FROM_NAME} <${FROM_EMAIL}>`,
+                    from: `${fromName} <${fromAddress}>`,
                     to: subscriber.email,
+                    reply_to: sender.email,
                     subject: subject,
                     html: personalizedBody.replace(/\n/g, '<br>'),
                 });
